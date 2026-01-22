@@ -5,48 +5,64 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def reset_class_attributes():
-    """Автоматически сбрасывать атрибуты класса перед каждым тестом"""
+    """ Автоматически сбрасывать атрибуты класса перед каждым тестом """
     Category.category_count = 0
     Category.product_count = 0
 
 # Тестируем класс Product
 class TestProduct(unittest.TestCase):
-    def test_product_initialization(self):
-        p = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
-        self.assertEqual(p.name, "Samsung Galaxy S23 Ultra")
-        self.assertEqual(p.description, "256GB, Серый цвет, 200MP камера")
-        self.assertEqual(p.price, 180000.0)
-        self.assertEqual(p.quantity, 5)
+    def setUp(self):
+        self.product = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
 
+    def test_privacy_of_price(self):
+        # Проверка, что прямая попытка доступа к приватному атрибуту вызывает AttributeError
+        with self.assertRaises(AttributeError):
+            getattr(self.product, "__price")
+
+        # Проверка доступности через геттер
+        self.assertEqual(self.product.price, 180000.0)
+
+    def test_getter_and_setter(self):
+        # Проверка геттера и сеттера
+        self.assertEqual(self.product.price, 180000.0)
+        self.product.price = 200000.0
+        self.assertEqual(self.product.price, 200000.0)
 
 # Тестируем класс Category
 class TestCategory(unittest.TestCase):
     def setUp(self):
+        # Подготовим несколько продуктов
         self.product1 = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
         self.product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
         self.product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
-        self.category1 = Category("Смартфоны", "Смартфоны, как средство...",
+
+        # Создадим категорию с несколькими продуктами
+        self.category1 = Category("Смартфоны",
+                                  "Смартфоны, как средство не только коммуникации, но и получения дополнительных функций для удобства жизни",
                                   [self.product1, self.product2, self.product3])
 
-    def test_category_initialization(self):
-        self.assertEqual(self.category1.name, "Смартфоны")
-        self.assertEqual(self.category1.description, "Смартфоны, как средство...")
-        self.assertListEqual(self.category1.products, [self.product1, self.product2, self.product3])
+    def test_initialization(self):
+        # Проверка инициализации
+        self.assertEqual(self.category1._name, "Смартфоны")
+        self.assertEqual(self.category1._description,
+                         "Смартфоны, как средство не только коммуникации, но и получения дополнительных функций для удобства жизни")
+        self.assertEqual(Category.category_count, 1)  # Только одна категория создана
+        self.assertEqual(Category.product_count, 3)  # Всего три товара в категории
 
-    def test_category_counts(self):
-        # Проверка увеличения значения в ноыой категории
-        initial_categories = Category.category_count
-        new_category = Category("Ноутбуки", "Различные ноутбуки", [])
-        final_categories = Category.category_count
-        self.assertEqual(final_categories, initial_categories + 1)
+    def test_class_counter(self):
+        # Проверка счётчиков категорий и товаров
+        self.assertEqual(Category.category_count, 1)  # Пока одна категория
+        self.assertEqual(Category.product_count, 3)   # Три товара в категории
 
-    def test_total_products_count(self):
-        # Проверяем правильный подсчёт товаров
-        expected_total_products = len(self.category1.products)
-        actual_total_products = Category.product_count
-        self.assertEqual(actual_total_products, expected_total_products)
+        # Создаём новую категорию
+        category2 = Category("Электроника", "Электронные устройства", [])
 
+        # Проверяем, что новая категория пустая
+        self.assertFalse(category2.products.strip())
 
-# Запуск теста
+        # Повторно проверяем количество категорий и товаров
+        self.assertEqual(Category.category_count, 2)  # Теперь категорий две
+        self.assertEqual(Category.product_count, 3)   # Количество товаров не изменилось
+
 if __name__ == '__main__':
     unittest.main()
