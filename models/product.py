@@ -31,4 +31,3 @@ class Product:
             self.__price = value
         else:
             print("Цена не должна быть нулевая или отрицательная")
-
