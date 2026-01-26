@@ -12,7 +12,22 @@ class Product:
         :param quantity: Количество товара на складе
         :type quantity: int
         """
-        self.name = name
-        self.description = description
-        self.price = price
-        self.quantity = quantity
+        self._name = name
+        self._description = description
+        self.__price = price
+        self._quantity = quantity
+
+    @classmethod
+    def new_product(cls, data: dict):
+        return cls(data["name"], data["description"], data["price"], data["quantity"])
+
+    @property
+    def price(self):
+        return self.__price
+
+    @price.setter
+    def price(self, value):
+        if value > 0:
+            self.__price = value
+        else:
+            print("Цена не должна быть нулевая или отрицательная")

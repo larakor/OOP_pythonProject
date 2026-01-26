@@ -3,50 +3,59 @@ from models.product import Product
 from models.category import Category
 import pytest
 
+
 @pytest.fixture(autouse=True)
 def reset_class_attributes():
-    """Автоматически сбрасывать атрибуты класса перед каждым тестом"""
+    """ Автоматически сбрасывать атрибуты класса перед каждым тестом """
     Category.category_count = 0
     Category.product_count = 0
 
+
 # Тестируем класс Product
 class TestProduct(unittest.TestCase):
-    def test_product_initialization(self):
-        p = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
-        self.assertEqual(p.name, "Samsung Galaxy S23 Ultra")
-        self.assertEqual(p.description, "256GB, Серый цвет, 200MP камера")
-        self.assertEqual(p.price, 180000.0)
-        self.assertEqual(p.quantity, 5)
+    def setUp(self):
+        self.product = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
 
+    def test_privacy_of_price(self):
+        # Проверка, что прямая попытка доступа к приватному атрибуту вызывает AttributeError
+        with self.assertRaises(AttributeError):
+            getattr(self.product, "__price")
+
+        # Проверка доступности через геттер
+        self.assertEqual(self.product.price, 180000.0)
+
+    def test_getter_and_setter(self):
+        # Проверка геттера и сеттера
+        self.assertEqual(self.product.price, 180000.0)
+        self.product.price = 200000.0
+        self.assertEqual(self.product.price, 200000.0)
 
 # Тестируем класс Category
-class TestCategory(unittest.TestCase):
-    def setUp(self):
+
+
+class TestCategory:
+    def setup_method(self):
         self.product1 = Product("Samsung Galaxy S23 Ultra", "256GB, Серый цвет, 200MP камера", 180000.0, 5)
-        self.product2 = Product("Iphone 15", "512GB, Gray space", 210000.0, 8)
-        self.product3 = Product("Xiaomi Redmi Note 11", "1024GB, Синий", 31000.0, 14)
-        self.category1 = Category("Смартфоны", "Смартфоны, как средство...",
-                                  [self.product1, self.product2, self.product3])
+        self.product2 = Product("iPhone 15", "512GB, Space Grey", 210000.0, 8)
+        self.product_list = [self.product1, self.product2]
 
-    def test_category_initialization(self):
-        self.assertEqual(self.category1.name, "Смартфоны")
-        self.assertEqual(self.category1.description, "Смартфоны, как средство...")
-        self.assertListEqual(self.category1.products, [self.product1, self.product2, self.product3])
+    def test_init(self):
+        category = Category("Смартфоны", "Категории мобильных устройств", [])
+        assert category._name == "Смартфоны"
+        assert category._description == "Категории мобильных устройств"
+        assert category.products == ""
+        assert Category.category_count == 1
+        assert Category.product_count == 0
 
-    def test_category_counts(self):
-        # Проверка увеличения значения в ноыой категории
-        initial_categories = Category.category_count
-        new_category = Category("Ноутбуки", "Различные ноутбуки", [])
-        final_categories = Category.category_count
-        self.assertEqual(final_categories, initial_categories + 1)
+    def test_category_count(self):
+        Category("Категория 1", "", [])
+        Category("Категория 2", "", [])
+        assert Category.category_count == 2
 
-    def test_total_products_count(self):
-        # Проверяем правильный подсчёт товаров
-        expected_total_products = len(self.category1.products)
-        actual_total_products = Category.product_count
-        self.assertEqual(actual_total_products, expected_total_products)
+    def test_product_count(self):
+        Category("Смартфоны", "Категории мобильных устройств", self.product_list)
+        assert Category.product_count == len(self.product_list)
 
 
-# Запуск теста
 if __name__ == '__main__':
     unittest.main()
